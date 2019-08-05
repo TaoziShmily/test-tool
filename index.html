@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0">
+    <title>支付人测试工具</title>
+    <link rel="icon" href="./favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+    <!-- <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"> -->
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/element-ui.css">
+    <link rel="stylesheet" href="css/style.css">
+
+  </head>
+  <body>
+    <div class="container" id="container">
+    	<!-- 头部 -->
+    	<header class="header">
+    		<img class="logo" src="images/logo.png">
+    	</header>
+    	<el-row  :gutter="10" style="margin-left: 0;margin-right: 0;"> 
+			<el-col :span="2" >
+				<el-menu
+				default-active="1"
+				class="el-menu-vertical-demo">
+				<el-menu-item index="1">
+					<span slot="title">商户列表</span>
+				</el-menu-item>
+				</el-menu>
+			</el-col>
+			<el-col :span="21">
+				<el-tabs v-model="editableTabsValue" type="card">
+					<el-tab-pane
+					v-for="(item, index) in editableTabs"
+					:key="item.name"
+					:label="item.title"
+					:name="item.name"
+					>
+						<el-row class="panel-title">
+							<el-col :span="12">
+								<div class="grid-content bg-purple">商户列表</div>
+							</el-col>
+							<el-col :span="12" style="text-align: right;">
+								<div class="grid-content bg-purple-light">
+									<el-button type="primary" @click="createMerchantDialog = true" plain>新增商户</el-button>
+	  								<el-button type="success"  @click="createTradeDialog = true" plain>生成交易</el-button>
+								</div>
+							</el-col>
+						</el-row>
+
+						<!-- 搜索条件 -->
+						<el-form :label-position="labelPosition" label-width="100px" size="large" :model="searchForm">
+							<el-row>
+								<el-col :span="5">
+									<el-form-item label="商户编号：">
+										<el-input v-model="searchForm.coding"></el-input>
+									</el-form-item>
+								</el-col>
+								<el-col :span="5">
+									<el-form-item label="手机号码：">
+										<el-input v-model="searchForm.phone"></el-input>
+									</el-form-item>
+								</el-col>
+								<el-col :span="5">
+									<el-form-item label="支付人编号：">
+										<el-input v-model="searchForm.frontCode"></el-input>
+									</el-form-item>
+								</el-col>
+								<el-col :span="5">
+									<el-form-item>
+										<el-button icon="el-icon-search" @click="searchBtn(searchForm)" style="border-radius: 20px;"></el-button>
+										<el-button icon="el-icon-refresh" style="border-radius: 20px;"></el-button>
+									</el-form-item>
+								</el-col>
+							</el-row>
+							<el-row>
+								<el-col :span="5">
+									<el-form-item label="所属产品：">
+										<el-select v-model="searchForm.productCode" clearable placeholder="不限">
+										    <el-option
+										      v-for="item in productCodes"
+										      :key="item.value"
+										      :label="item.label"
+										      :value="item.value">
+										    </el-option>
+										</el-select>
+									</el-form-item>
+								</el-col>
+								<el-col :span="5">
+									<el-form-item label="费率类型：">
+										<el-select v-model="searchForm.rateType" clearable placeholder="不限">
+										    <el-option
+										      v-for="item in rateTypes"
+										      :key="item.value"
+										      :label="item.label"
+										      :value="item.value">
+										    </el-option>
+										</el-select>
+									</el-form-item>
+								</el-col>
+								
+							</el-row>
+						</el-form>
+
+						<!-- 表格列表 -->
+						<el-table :data="tableData" style="width: 100%">
+							<el-table-column
+								prop="realName"
+								label="姓名"
+								width="180">
+							</el-table-column>
+							<el-table-column
+								prop="coding"
+								label="商户编号"
+								width="180">
+							</el-table-column>
+							<el-table-column
+								prop="deviceNum"
+								label="SN">
+							</el-table-column>
+							<el-table-column
+								prop="phone"
+								label="手机号">
+							</el-table-column>
+							<el-table-column
+								prop="frontCode"
+								label="所属支付人编号">
+							</el-table-column>
+							<el-table-column
+								prop="rateType"
+								label="费率类型">
+							</el-table-column>
+							<el-table-column
+								prop="productCode"
+								label="所属产品">
+							</el-table-column>
+							<el-table-column
+								prop="createDt"
+								label="开通时间">
+							</el-table-column>
+							<el-table-column
+								prop="updatedDt"
+								label="最近操作时间">
+							</el-table-column>
+							<el-table-column
+						    fixed="right"
+						    label="操作"
+						    width="100">
+								<template slot-scope="scope">
+								<el-button @click="handleClick(scope.row)" type="text" size="small">创建交易</el-button>
+								<el-button type="text" size="small"  @click="tradeRecordDialog = true">交易记录</el-button>
+								</template>
+						    </el-table-column>
+						</el-table>
+						<!-- 页数 -->
+						<div class="block pages">
+						    <el-pagination
+						      @size-change="handleSizeChange"
+						      @current-change="handleCurrentChange"
+						      :current-page.sync="currentPage"
+						      :page-size="10"
+						      layout="total, prev, pager, next"
+						      :total="200">
+						    </el-pagination>
+					  </div>
+					</el-tab-pane>
+				</el-tabs>
+			</el-col>
+		</el-row>
+		<!-- 新增商户 -->
+	    <el-dialog title="新增商户" :visible.sync="createMerchantDialog" width="35%">
+			<el-form :model="merchantForm" :label-width="formLabelWidth">
+				<el-form-item label="所属支付人编号" >
+					<el-input v-model="merchantForm.frontCode" autocomplete="off" style="width: 100%"></el-input>
+				</el-form-item>
+				<el-form-item label="所属产品">
+					<el-select v-model="merchantForm.productCode" clearable placeholder="请选择" style="width: 100%">
+					    <el-option label="快乐pay不+3" value="1"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="费率类型">
+					<el-select v-model="merchantForm.rateType" clearable placeholder="请选择" style="width: 100%">
+						<el-option label="低费率" value="1"></el-option>
+						<el-option label="高费率" value="10"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="开通时间">
+					<el-date-picker
+				      v-model="merchantForm.time"
+				      type="datetime"
+				      placeholder="选择日期时间"
+				      align="right"
+				      :picker-options="pickerOptions"
+				     style="width: 100%;"
+				      >
+				    </el-date-picker>
+				</el-form-item>
+				<el-form-item label="身份证" >
+					<el-input v-model="merchantForm.idCard" autocomplete="off" style="width: 100%"></el-input>
+				</el-form-item>
+				<el-form-item label="创建数量" >
+					<el-input v-model="merchantForm.num" type="number"  autocomplete="off" style="width: 100%"></el-input>
+				</el-form-item>
+				
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="createMerchantDialog = false">取 消</el-button>
+				<el-button type="primary" @click="createMerchantDialog = false">确 定</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- 生成交易 -->
+	    <el-dialog title="生成交易" :visible.sync="createTradeDialog" :width="tradeFormList.length==0?'40%':tradeFormList.length*40+'%'">
+			<div style="display: flex;">	
+				<div style="border: 1px dashed #d8d0d0;border-radius: 5px;padding: 9px;margin: 10px;width:400px;flex:1;" v-for="(item,index) in tradeFormList">
+					<el-button type="danger" icon="el-icon-delete" circle @click="del(index)"></el-button>
+					<el-form :model="item" :label-width="formLabelWidth">
+						<el-form-item label="商户编号" >
+							<el-input v-model="item.coding" autocomplete="off" style="width: 100%"></el-input>
+						</el-form-item>
+						<el-form-item label="SN号" >
+							<el-input v-model="item.sn" autocomplete="off" style="width: 100%"></el-input>
+						</el-form-item>
+						<el-form-item label="交易类型">
+							<el-select v-model="item.tradingType" clearable placeholder="请选择" style="width: 100%">
+								<el-option label="押金" value="1"></el-option>
+								<el-option label="普通交易" value="1"></el-option>
+								<el-option label="快捷支付" value="2"></el-option>
+								<el-option label="云闪付" value="3"></el-option>
+								<el-option label="挥卡交易" value="4"></el-option>
+								<el-option label="账单分期" value="5"></el-option>
+							</el-select>
+						</el-form-item>
+						<el-form-item label="卡类型">
+							<el-select v-model="item.cardType" clearable placeholder="请选择" style="width: 100%">
+								<el-option label="借记卡" value="1"></el-option>
+								<el-option label="贷记卡" value="1"></el-option>
+								<el-option label="快捷支付" value="2"></el-option>
+								<el-option label="准贷记卡" value="3"></el-option>
+								<el-option label="第三方支付" value="4"></el-option>
+							</el-select>
+						</el-form-item>
+						<el-form-item label="交易金额" >
+							<el-input v-model="item.ordertCrash" type="number"  autocomplete="off" style="width: 100%"></el-input>
+						</el-form-item>
+						<el-form-item label="交易时间(非必填)">
+							<el-date-picker
+							  v-model="item.time"
+							  type="datetime"
+							  placeholder="选择日期时间"
+							  align="right"
+							  :picker-options="pickerOptions"
+							 style="width: 100%;"
+							  >
+							</el-date-picker>
+						</el-form-item>
+						<el-form-item label="生产数量" >
+							<el-input v-model="item.num" type="number"  autocomplete="off" style="width: 100%"></el-input>
+						</el-form-item>
+						
+					</el-form>
+				</div>
+			</div>
+			<div slot="footer" class="dialog-footer">
+				<el-button type="primary" icon="el-icon-edit" circle style="float: left;" @click="add"></el-button>
+				<el-button @click="createTradeDialog = false">取 消</el-button>
+				<el-button type="primary" @click="createTradeDialog = false">确 定</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- 交易记录 -->
+		<el-dialog title="交易记录" :visible.sync="tradeRecordDialog"  width="90%">
+			<!-- 搜索条件 -->
+			<el-form :label-position="labelPosition" label-width="100px" size="large" :model="tradeRecordForm">
+				<el-row>
+					<el-col :span="5">
+						<el-form-item label="商户编号：">
+							<el-input v-model="tradeRecordForm.coding"></el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="5">
+						<el-form-item label="订单编号：">
+							<el-input v-model="tradeRecordForm.orderNo" placeholder="订单编号"></el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="5">
+						<el-form-item>
+							<el-button icon="el-icon-search" style="border-radius: 20px;"></el-button>
+							<el-button icon="el-icon-refresh" style="border-radius: 20px;"></el-button>
+						</el-form-item>
+					</el-col>
+				</el-row>
+				<el-row>
+					<el-col :span="5">
+						<el-form-item label="所属产品：">
+							<el-select v-model="tradeRecordForm.productCode" clearable placeholder="不限">
+							    <el-option
+							      v-for="item in productCodes"
+							      :key="item.value"
+							      :label="item.label"
+							      :value="item.value">
+							    </el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="5">
+						<el-form-item label="SN编号：">
+							<el-input v-model="tradeRecordForm.sn"  placeholder="SN编号"></el-input>
+						</el-form-item>
+					</el-col>
+					
+				</el-row>
+			</el-form>
+			<!-- 表格列表 -->
+			<el-table :data="tradeRecordTableData" style="width: 100%">
+				<el-table-column
+					prop="realName"
+					label="所属支付人"
+					width="100">
+				</el-table-column>
+				<el-table-column
+					prop="frontCode"
+					label="支付人编号"
+					width="180">
+				</el-table-column>
+				<el-table-column
+					prop="coding"
+					label="商户编号"
+					width="180">
+				</el-table-column>
+				<el-table-column
+					prop="sn"
+					label="SN">
+				</el-table-column>
+				<el-table-column
+					prop="orderNo"
+					label="订单编号">
+				</el-table-column>
+				<el-table-column
+					prop="ordertCrash"
+					label="订单金额">
+				</el-table-column>
+				<el-table-column
+					prop="productCode"
+					label="所属产品">
+				</el-table-column>
+				<el-table-column
+					prop="orderDt"
+					label="订单时间">
+				</el-table-column>
+				<el-table-column
+					prop="orderType"
+					label="支付类型">
+				</el-table-column>
+				<el-table-column
+					prop="a"
+					label="交易场景">
+				</el-table-column>
+				<el-table-column
+					prop="b"
+					label="交易唯一标识">
+				</el-table-column>
+				<el-table-column
+					prop="c"
+					label="原订单编号">
+				</el-table-column>
+			</el-table>
+			<!-- 页数 -->
+			<div class="block pages">
+			    <el-pagination
+			      @size-change="handleSizeChange"
+			      @current-change="handleCurrentChange"
+			      :current-page.sync="currentPage"
+			      layout="total, prev, pager, next"
+			      :total="5">
+			    </el-pagination>
+		  </div>
+		</el-dialog>
+
+    </div>
+
+    <!-- <script src="https://cdn.staticfile.org/vue/2.6.10/vue.min.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script> -->
+
+     <script src="js/vue.min.js"></script>
+    <script src="js/element-ui.js"></script>
+	<script src="js/axios.min.js"></script>
+    <script src="js/custom.js"></script> 
+
+  </body>
+</html>
